@@ -9,8 +9,7 @@ if ($mysqli_connection->connect_errno) {
 
 $id = $_GET["id"];
 
-$query = "SELECT * FROM videogame WHERE id = $id";
-$response = $mysqli_connection->query($query);
+$response = $mysqli_connection->query("SELECT * FROM videogame WHERE id = $id");
 $row = $response->fetch_assoc();
 $videogame[] = $row;
 
@@ -33,11 +32,9 @@ while ($row_genre = $response_genre->fetch_row()) {
 }
 
 if (isset($row["score"])) {
-    $query = "SELECT * FROM sections-score WHERE videogame_id = " . $row["id"];
-    $response2 = $mysqli_connection->query($query);
-    $row2 = $response2->fetch_assoc();
-
-    $videogame["score"] = $row2;
+    $response_score = $mysqli_connection->query("SELECT * FROM sections-score WHERE videogame_id = " . $row["id"]);
+    $row_score = $response_score->fetch_assoc();
+    $videogame["score"] = $row_score;
 }
 
 echo json_encode(array("videogame" => $videogame));
