@@ -129,4 +129,6 @@ if (isset($platform)) {
     }
 }
 
+echo $id;
+
 $mysqli_connection->close();
