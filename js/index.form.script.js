@@ -20,6 +20,7 @@ function validate(defaultEvent) {
     // Recibe por parámetro defaultEvent que gestionará el evento por defecto asociado al botón submit
     // que en este caso lo que hará es enviar el formulario
     // Se valida cada campo con llamadas a sus funciones correspondientes
+
     if (validateText(this) && validateEmail() && validateTextArea())
         // Se envía el formulario devolviendo true
         return true;
@@ -146,5 +147,5 @@ function sendRequest() {
 
     // Se abre una ventana con la resolución del formulario que habrá obtenido 
     // a través del Local Storage
-    window.open("request-sent.html", "Consulta enviada con éxito", "width=700,height=450");
+    window.open("request.html", "Consulta enviada con éxito", "width=700,height=450");
 }
