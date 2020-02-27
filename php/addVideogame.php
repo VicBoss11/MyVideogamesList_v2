@@ -2,51 +2,54 @@
 
 $mysqli_connection = new mysqli("localhost", "root", "", "myvideogameslist");
 
+$mysqli_connection->set_charset("utf8mb4");
+
 if ($mysqli_connection->connect_errno) {
     echo 'Error de conexión: ' . $mysqli_connection->connect_error . '<br>';
     exit();
 }
 
-$name = $_GET["name"];
+$name = $_POST["name"];
 
-if (isset($_GET["genre"])) {
-    $genre = json_decode($_GET["genre"], TRUE);
+if (!isset($name)) {
+    exit();
 }
 
-if (isset($_GET["developer"])) {
-    $developer = json_decode($_GET["developer"], TRUE);
+$genre = $_POST["genre"];
+$developer = $_POST["developer"];
+$publisher = $_POST["publisher"];
+$platform = $_POST["platform"];
+$rating = $_POST["rating"];
+$image = $_POST["image"];
+
+if (!isset($rating)) {
+    $rating = NULL;
 }
 
-if (isset($_GET["publisher"])) {
-    $publisher = json_decode($_GET["publisher"], TRUE);
-}
+if (!empty($image)) {
+    if (!search_img($image)) {
+        copy($image, "../img/videogames/" . $image);
+    }
 
-if (isset($_GET["platform"])) {
-    $platform = json_decode($_GET["platform"], TRUE);
-}
-
-if (isset($_GET["rating"])) {
-    $rating = $_GET["rating"];
+    $image = "img/videogames/" . $image;
 } else {
-    $rating = "";
+    $image = "img/videogames/no-image-min.png";
 }
-
-$image = $_GET["image"];
 
 $id = "VG-" . uniqid();
 $since_date = date("Y-m-d");
 
 $stmt = $mysqli_connection->stmt_init();
 
-$stmt->prepare("INSERT INTO videogame VALUES (?, ?, ?, ?, ?, ?)");
-$stmt->bind_param("ssissi", $id, $name, $rating, $image, $since_date, $score);
+$stmt->prepare("INSERT INTO videogame (id, name, rating, image, sinceDate) VALUES (?, ?, ?, ?, ?)");
+$stmt->bind_param("ssiss", $id, $name, $rating, $image, $since_date);
 
 if (!$stmt->execute()) {
     echo "Error al ejecutar la consulta: (" . $stmt->errno . ") " . $stmt->error;
     exit();
 }
 
-if (isset($genre)) {
+if (!empty($genre)) {
     for ($i = 0; $i < count($genre); $i++) {
         $stmt->prepare("INSERT INTO videogame_genre VALUES (?, ?)");
         $stmt->bind_param("ss", $id, $genre[$i]);
@@ -57,20 +60,17 @@ if (isset($genre)) {
     }
 }
 
-if (isset($developer)) {
+if (!empty($developer)) {
     for ($i = 0; $i < count($developer); $i++) {
         $developer_name = $developer[$i];
 
-        $stmt->prepare("INSERT INTO videogame_developer VALUES (?, ?)");
-        $stmt->bind_param("ss", $id, $developer_name);
+        $stmt->prepare("SELECT * FROM developer WHERE name = ?");
+        $stmt->bind_param("s", $developer_name);
+        $stmt->execute();
 
-        if (!$stmt->execute()) {
-            echo "Error al ejecutar la consulta: (" . $stmt->errno . ") " . $stmt->error;
-        }
+        $response = $stmt->get_result();
 
-        $response = $mysqli_connection->query("SELECT * FROM developer WHERE name = $developer_name");
-
-        if (!$response->fetch_row()[0]) {
+        if ($row = $response->fetch_row() === NULL) {
             $stmt->prepare("INSERT INTO developer VALUES (?)");
             $stmt->bind_param("s", $developer_name);
 
@@ -78,23 +78,27 @@ if (isset($developer)) {
                 echo "Error al ejecutar la consulta: (" . $stmt->errno . ") " . $stmt->error;
             }
         }
-    }
-}
 
-if (isset($publisher)) {
-    for ($i = 0; $i < count($publisher); $i++) {
-        $publisher_name = $publisher[$i];
-
-        $stmt->prepare("INSERT INTO videogame_publisher VALUES (?, ?)");
-        $stmt->bind_param("ss", $id, $publisher_name);
+        $stmt->prepare("INSERT INTO videogame_developer VALUES (?, ?)");
+        $stmt->bind_param("ss", $id, $developer_name);
 
         if (!$stmt->execute()) {
             echo "Error al ejecutar la consulta: (" . $stmt->errno . ") " . $stmt->error;
         }
+    }
+}
 
-        $response = $mysqli_connection->query("SELECT * FROM publisher WHERE name = $publisher_name");
+if (!empty($publisher)) {
+    for ($i = 0; $i < count($publisher); $i++) {
+        $publisher_name = $publisher[$i];
 
-        if (!$response->fetch_row()[0]) {
+        $stmt->prepare("SELECT * FROM publisher WHERE name = ?");
+        $stmt->bind_param("s", $publisher_name);
+        $stmt->execute();
+
+        $response = $stmt->get_result();
+
+        if ($row = $response->fetch_row() === NULL) {
             $stmt->prepare("INSERT INTO publisher VALUES (?)");
             $stmt->bind_param("s", $publisher_name);
 
@@ -102,23 +106,27 @@ if (isset($publisher)) {
                 echo "Error al ejecutar la consulta: (" . $stmt->errno . ") " . $stmt->error;
             }
         }
-    }
-}
 
-if (isset($platform)) {
-    for ($i = 0; $i < count($platform); $i++) {
-        $platform_name = $platform[$i];
-
-        $stmt->prepare("INSERT INTO videogame_platform VALUES (?, ?)");
-        $stmt->bind_param("ss", $id, $platform_name);
+        $stmt->prepare("INSERT INTO videogame_publisher VALUES (?, ?)");
+        $stmt->bind_param("ss", $id, $publisher_name);
 
         if (!$stmt->execute()) {
             echo "Error al ejecutar la consulta: (" . $stmt->errno . ") " . $stmt->error;
         }
+    }
+}
 
-        $response = $mysqli_connection->query("SELECT * FROM platform WHERE name = $platform_name");
+if (!empty($platform)) {
+    for ($i = 0; $i < count($platform); $i++) {
+        $platform_name = $platform[$i];
 
-        if (!$response->fetch_row()[0]) {
+        $stmt->prepare("SELECT * FROM platform WHERE name = ?");
+        $stmt->bind_param("s", $platform_name);
+        $stmt->execute();
+
+        $response = $stmt->get_result();
+
+        if ($row = $response->fetch_row() === NULL) {
             $stmt->prepare("INSERT INTO platform VALUES (?)");
             $stmt->bind_param("s", $platform_name);
 
@@ -126,9 +134,33 @@ if (isset($platform)) {
                 echo "Error al ejecutar la consulta: (" . $stmt->errno . ") " . $stmt->error;
             }
         }
+
+        $stmt->prepare("INSERT INTO videogame_platform VALUES (?, ?)");
+        $stmt->bind_param("ss", $id, $platform_name);
+
+        if (!$stmt->execute()) {
+            echo "Error al ejecutar la consulta: (" . $stmt->errno . ") " . $stmt->error;
+        }
     }
 }
 
 echo $id;
 
 $mysqli_connection->close();
+
+
+function search_img($img)
+{
+    $dir = "../img/videogames/";
+    $files = scandir($dir);
+
+    foreach ($files as $file) {
+        if (!is_dir($dir . $file)) {
+            if ($img == $file) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}

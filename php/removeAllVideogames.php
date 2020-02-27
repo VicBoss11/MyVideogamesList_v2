@@ -2,12 +2,12 @@
 
 $mysqli_connection = new mysqli("localhost", "root", "", "myvideogameslist");
 
+$mysqli_connection->set_charset("utf8mb4");
+
 if ($mysqli_connection->connect_errno) {
     echo 'Error de conexión: ' . $mysqli_connection->connect_error . '<br>';
     exit();
 }
-
-$id = $_GET["id"];
 
 $query = "DELETE FROM videogame";
 
