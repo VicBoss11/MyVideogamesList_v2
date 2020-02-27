@@ -27,10 +27,6 @@ if (!isset($rating)) {
 }
 
 if (!empty($image)) {
-    if (!search_img($image)) {
-        copy($image, "../img/videogames/" . $image);
-    }
-
     $image = "img/videogames/" . $image;
 } else {
     $image = "img/videogames/no-image-min.png";
@@ -147,20 +143,3 @@ if (!empty($platform)) {
 echo $id;
 
 $mysqli_connection->close();
-
-
-function search_img($img)
-{
-    $dir = "../img/videogames/";
-    $files = scandir($dir);
-
-    foreach ($files as $file) {
-        if (!is_dir($dir . $file)) {
-            if ($img == $file) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
